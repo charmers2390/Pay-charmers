@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Charmers Payment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      color: #8B0000;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 500px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .card-type {
+      margin-top: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 0.9em;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>Charmers Payment</h1>
+  <form id="paymentForm">
+    <label for="email">Your Email</label>
+    <input type="email" id="email" name="email" required />
+
+    <label for="order">Select Your Bracelet</label>
+    <select id="order" name="order" required>
+      <option value="Red and Orange Bracelet">Red and Orange Bracelet</option>
+      <option value="Blue and Yellow Bracelet">Blue and Yellow Bracelet</option>
+      <option value="Custom">Custom</option>
+    </select>
+
+    <label for="cardNumber">Credit/Debit Card Number</label>
+    <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" />
+    <div class="card-type" id="cardType">Card Type: Unknown</div>
+
+    <label for="expiry">Expiration Date</label>
+    <input type="text" id="expiry" placeholder="MM/YY" />
+
+    <label for="cvc">CVC</label>
+    <input type="text" id="cvc" placeholder="123" />
+
+    <label>Pay through</label>
+    <select id="paymentOption">
+      <option value="Credit/Debit Card">Credit/Debit Card</option>
+      <option value="https://cash.app">Cash App</option>
+      <option value="https://paypal.com">PayPal</option>
+      <option value="https://apple.com/apple-pay/">Apple Pay</option>
+    </select>
+
+    <button type="submit">Complete Order</button>
+  </form>
+
+  <div class="footer">Charmers 2025 All Rights Reserved</div>
+
+  <script>
+    const cardInput = document.getElementById('cardNumber');
+    const cardTypeDisplay = document.getElementById('cardType');
+
+    cardInput.addEventListener('input', () => {
+      const value = cardInput.value.replace(/\s+/g, '');
+      let type = 'Unknown';
+      if (/^4/.test(value)) {
+        type = 'Visa';
+      } else if (/^5[1-5]/.test(value)) {
+        type = 'MasterCard';
+      } else if (/^3[47]/.test(value)) {
+        type = 'American Express';
+      } else if (/^6/.test(value)) {
+        type = 'Discover';
+      }
+      cardTypeDisplay.textContent = 'Card Type: ' + type;
+    });
+
+    document.getElementById('paymentForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const order = document.getElementById('order').value;
+      const mailtoLink = `mailto:support@charmersbiz.org?subject=New Order&body=Order Type: ${order}%0D%0AEmail: ${email}`;
+      window.location.href = mailtoLink;
+    });
+
+    document.getElementById('paymentOption').addEventListener('change', function () {
+      const url = this.value;
+      if (url.startsWith("http")) {
+        window.open(url, "_blank");
+      }
+    });
+  </script>
+</body>
+</html>
