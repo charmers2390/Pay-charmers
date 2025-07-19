@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Charmers Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, select, button { display: block; width: 100%; margin: 10px 0; padding: 10px; }
+    #payment-element { margin-top: 20px; }
+    #summary { margin: 20px 0; }
+    .disabled { background-color: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h2>Charmers Bracelet Checkout</h2>
+  <form id="checkout-form">
+    <label>Bracelet Customization</label>
+    <input type="text" id="customText" placeholder="Your bracelet text..." required />
+
+    <label>Bracelet Size</label>
+    <select id="braceletSize" required>
+      <option value="">Select size</option>
+      <option value="XS">XS</option><option value="S">S</option><option value="M">M</option>
+      <option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
+      <option value="XXXL">XXXL</option>
+    </select>
+
+    <label>Shipping Method</label>
+    <select id="shipping" required>
+      <option value="">Select shipping</option>
+      <option value="10">USA Ground Advantage - $10</option>
+      <option value="20">USA Priority Mail - $20</option>
+      <option value="50">USA Priority Mail Express - $50</option>
+      <option value="50">International Economy - $50</option>
+      <option value="70">International Express - $70</option>
+      <option value="0" disabled>North Korea - Unavailable</option>
+      <option value="0" disabled>South Korea - Unavailable</option>
+      <option value="0" disabled>Antarctica - Unavailable</option>
+    </select>
+
+    <label>Name</label>
+    <input type="text" id="name" required />
+    <label>Phone Number</label>
+    <input type="tel" id="phone" required />
+    <label>Email</label>
+    <input type="email" id="email" required />
+    <label>Street Address</label>
+    <input type="text" id="address1" required />
+    <label>Street Address 2 (optional)</label>
+    <input type="text" id="address2" />
+    <label>City</label>
+    <input type="text" id="city" required />
+    <label>State/Territory</label>
+    <input type="text" id="state" required />
+    <label>Country</label>
+    <input type="text" id="country" required />
+
+    <div id="summary">
+      <p>Bracelet Cost: $<span id="braceletCost">0</span></p>
+      <p>Shipping: $<span id="shippingCost">0</span></p>
+      <p>Tax (9.75%): $<span id="tax">0</span></p>
+      <strong>Total: $<span id="total">0</span></strong>
+    </div>
+
+    <div id="payment-element">Stripe Elements loading...</div>
+    <button type="button" id="payButton" class="disabled" disabled>Pay Now</button>
+    <button type="button" id="submitOrder" class="disabled" disabled>Send Order Request</button>
+  </form>
+
+  <p>Powered by Stripe – pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc</p>
+
+  <script>
+    const stripe = Stripe('pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc');
+    let elements = stripe.elements();
+    let card = elements.create("payment");
+    card.mount("#payment-element");
+
+    const braceletInput = document.getElementById('customText');
+    const shippingSelect = document.getElementById('shipping');
+    const payBtn = document.getElementById('payButton');
+    const submitBtn = document.getElementById('submitOrder');
+
+    function updateCosts() {
+      const chars = braceletInput.value.length;
+      let braceletCost = chars > 100 ? 0 : chars > 30 ? 15 : chars > 12 ? 10 : chars >= 6 ? 6 : 3;
+      const shipping = parseFloat(shippingSelect.value) || 0;
+      const tax = 0.0975 * (braceletCost + shipping);
+      const total = (braceletCost + shipping + tax).toFixed(2);
+
+      document.getElementById('braceletCost').textContent = braceletCost;
+      document.getElementById('shippingCost').textContent = shipping;
+      document.getElementById('tax').textContent = tax.toFixed(2);
+      document.getElementById('total').textContent = total;
+
+      payBtn.disabled = false;
+      payBtn.classList.remove("disabled");
+    }
+
+    braceletInput.addEventListener("input", updateCosts);
+    shippingSelect.addEventListener("change", updateCosts);
+
+    payBtn.addEventListener("click", async () => {
+      // Simulated payment success
+      alert("Payment Successful (simulated)");
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("disabled");
+    });
+
+    submitBtn.addEventListener("click", () => {
+      const email = document.getElementById("email").value;
+      const subject = "Charmers Bracelet Order";
+      const body = `
+Name: ${document.getElementById("name").value}
+Phone: ${document.getElementById("phone").value}
+Email: ${email}
+Address: ${document.getElementById("address1").value}, ${document.getElementById("address2").value}
+City: ${document.getElementById("city").value}, ${document.getElementById("state").value}, ${document.getElementById("country").value}
+Bracelet Text: ${braceletInput.value}
+Bracelet Size: ${document.getElementById("braceletSize").value}
+Shipping: $${document.getElementById("shippingCost").textContent}
+Tax: $${document.getElementById("tax").textContent}
+Total: $${document.getElementById("total").textContent}
+      `;
+      window.location.href = `mailto:support@charmersbiz.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    });
+  </script>
+</body>
+</html>
