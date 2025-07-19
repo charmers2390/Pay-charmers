@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Charmers Payment</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            background-color: #ffe6f0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h2 {
+            color: #e60073;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+        .stripe-box {
+            margin-top: 20px;
+        }
+        #submit-btn {
+            background-color: #ff3399;
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #submit-btn:disabled {
+            background-color: #ccc;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Charmers Payment</h2>
+
+    <div class="form-group">
+        <label for="bracelet">Bracelet Customization</label>
+        <input type="text" id="bracelet" placeholder="e.g., Custom Pink with Hearts">
+    </div>
+
+    <div class="form-group">
+        <label for="shipping">Select Shipping Method</label>
+        <select id="shipping">
+            <option value="">-- Select a Shipping Method --</option>
+            <option value="10">Ground Advantage - $10</option>
+            <option value="20">Priority Mail - $20</option>
+            <option value="50">Priority Mail Express - $50</option>
+            <option value="50">International Economy - $50</option>
+            <option value="70">International Express - $70</option>
+            <option value="0" disabled>North Korea - Unavailable</option>
+            <option value="0" disabled>South Korea - Unavailable</option>
+            <option value="0" disabled>Antarctica - Unavailable</option>
+        </select>
+    </div>
+
+    <div class="form-group"><label>Name</label><input type="text" id="name"></div>
+    <div class="form-group"><label>Phone Number</label><input type="tel" id="phone"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="email"></div>
+    <div class="form-group"><label>Street Address</label><input type="text" id="address1"></div>
+    <div class="form-group"><label>Street Address 2 (Optional)</label><input type="text" id="address2"></div>
+    <div class="form-group"><label>City</label><input type="text" id="city"></div>
+    <div class="form-group"><label>State/Territory</label><input type="text" id="state"></div>
+    <div class="form-group"><label>Country</label><input type="text" id="country" value="USA"></div>
+
+    <div class="form-group">
+        <label>Payment Method</label>
+        <div class="radio-group">
+            <label><input type="radio" name="payment" value="googlepay"> Google Pay</label>
+            <label><input type="radio" name="payment" value="applepay"> Apple Pay</label>
+            <label><input type="radio" name="payment" value="paypal"> PayPal</label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="size">Bracelet Size</label>
+        <select id="size">
+            <option>XS</option><option>S</option><option>M</option>
+            <option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+        </select>
+    </div>
+
+    <div class="stripe-box">
+        <label>Card Information</label>
+        <div id="card-element"></div>
+        <div id="card-errors" role="alert" style="color: red;"></div>
+    </div>
+
+    <br>
+    <button id="submit-btn">Submit Order</button>
+
+    <div class="footer">
+        <p>🟩 Powered by Stripe</p>
+        <p>Public Key: pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc</p>
+    </div>
+
+    <script>
+        const stripe = Stripe('pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc');
+        const elements = stripe.elements();
+        const card = elements.create('card');
+        card.mount('#card-element');
+
+        card.on('change', function(event) {
+            const displayError = document.getElementById('card-errors');
+            displayError.textContent = event.error ? event.error.message : '';
+        });
+    </script>
+
+</body>
+</html>
