@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Charmers Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #payment-request-button {
+      margin-bottom: 10px;
+    }
+    #card-element {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #total {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Charmers Checkout</h2>
+
+  <label>Bracelet Customization:</label>
+  <input id="bracelet" type="text">
+
+  <label>Select Shipping:</label>
+  <select id="shipping" onchange="updateTotal()">
+    <option value="10">USA - Ground Advantage $10</option>
+    <option value="20">USA - Priority Mail $20</option>
+    <option value="50">USA - Priority Mail Express $50</option>
+    <option value="50">International Economy $50</option>
+    <option value="70">International Express $70</option>
+    <option disabled>North Korea - Unavailable</option>
+    <option disabled>South Korea - Unavailable</option>
+    <option disabled>Antarctica - Unavailable</option>
+  </select>
+
+  <label>Name:</label>
+  <input type="text">
+
+  <label>Phone Number:</label>
+  <input type="text">
+
+  <label>Email:</label>
+  <input type="email">
+
+  <label>Street Address:</label>
+  <input type="text">
+
+  <label>Street Address 2 (Optional):</label>
+  <input type="text">
+
+  <label>City:</label>
+  <input type="text">
+
+  <label>State/Territory:</label>
+  <input type="text">
+
+  <label>Country:</label>
+  <input type="text">
+
+  <label>Bracelet Size:</label>
+  <select>
+    <option>XS</option>
+    <option>S</option>
+    <option>M</option>
+    <option>L</option>
+    <option>XL</option>
+    <option>XXL</option>
+    <option>XXXL</option>
+  </select>
+
+  <label>Payment Method:</label>
+  <select id="payment-method">
+    <option>Credit/Debit</option>
+    <option>Apple Pay</option>
+    <option>Google Pay</option>
+    <option>Cash App</option>
+    <option>PayPal (manual invoice)</option>
+  </select>
+
+  <div id="payment-request-button"></div>
+  <div id="card-element"></div>
+
+  <div id="total">Total: $10.00</div>
+
+  <button id="pay-button">Pay Now</button>
+
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const shippingSelect = document.getElementById("shipping");
+    const totalDisplay = document.getElementById("total");
+
+    function updateTotal() {
+      const shippingCost = parseInt(shippingSelect.value);
+      const braceletText = document.getElementById("bracelet").value;
+      let braceletPrice = 3;
+      if (braceletText.length > 100) {
+        braceletPrice = 0;
+        alert("Bracelet text too long. Try again.");
+      } else if (braceletText.length > 30) {
+        braceletPrice = 15;
+      } else if (braceletText.length > 12) {
+        braceletPrice = 10;
+      } else if (braceletText.length >= 6) {
+        braceletPrice = 6;
+      }
+      const total = shippingCost + braceletPrice;
+      totalDisplay.innerText = "Total: $" + total.toFixed(2);
+    }
+
+    document.getElementById("bracelet").addEventListener("input", updateTotal);
+  </script>
+</body>
+</html>
