@@ -1,156 +1,142 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Charmers Checkout</title>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      padding: 30px;
-    }
-    form {
-      background: #fff;
+      font-family: sans-serif;
       padding: 20px;
-      max-width: 600px;
-      margin: auto;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     label {
       display: block;
-      margin: 10px 0 5px;
+      margin-top: 10px;
     }
-    input, select, textarea {
+    input, select {
       width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
+      padding: 8px;
+      margin-top: 5px;
     }
     #payment-request-button {
-      margin-bottom: 15px;
+      margin-top: 20px;
     }
-    #card-element {
+    .StripeElement {
       padding: 10px;
       border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-bottom: 15px;
+      margin-top: 10px;
     }
-    button {
-      background: #6772e5;
-      color: #fff;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      width: 100%;
-    }
-    button:hover {
-      background: #5469d4;
-    }
-    .powered-by {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 14px;
-      color: #888;
+    #card-errors {
+      color: red;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-
-<form id="payment-form">
   <h2>Charmers Checkout</h2>
-  <label for="customize">Bracelet Customization</label>
-  <textarea id="customize" required></textarea>
 
-  <label for="shipping">Select Shipping</label>
-  <select id="shipping" required>
-    <option value="">Choose...</option>
-    <option value="10">USA - Ground Advantage $10</option>
-    <option value="20">USA - Priority Mail $20</option>
-    <option value="50">USA - Priority Mail Express $50</option>
-    <option value="50">International Economy $50</option>
-    <option value="70">International Express $70</option>
-    <option value="unavailable">North Korea - Unavailable</option>
-    <option value="unavailable">South Korea - Unavailable</option>
-    <option value="unavailable">Antarctica - Unavailable</option>
-  </select>
+  <form id="payment-form">
+    <label>Name:<input type="text" id="name" required></label>
+    <label>Phone Number:<input type="tel" id="phone" required></label>
+    <label>Email:<input type="email" id="email" required></label>
+    <label>Street Address:<input type="text" id="address" required></label>
+    <label>Street Address 2 (Optional):<input type="text" id="address2"></label>
+    <label>City:<input type="text" id="city" required></label>
+    <label>State/Territory:<input type="text" id="state" required></label>
+    <label>Country:<input type="text" id="country" required></label>
 
-  <label for="name">Name</label>
-  <input type="text" id="name" required>
+    <label>Bracelet Size:
+      <select id="bracelet-size">
+        <option>XS</option>
+        <option>S</option>
+        <option>M</option>
+        <option>L</option>
+        <option>XL</option>
+        <option>XXL</option>
+        <option>XXXL</option>
+      </select>
+    </label>
 
-  <label for="phone">Phone</label>
-  <input type="text" id="phone" required>
+    <label>Payment Method:
+      <select id="payment-method">
+        <option>Credit/Debit</option>
+        <option>Apple Pay</option>
+        <option>Google Pay</option>
+      </select>
+    </label>
 
-  <label for="email">Email</label>
-  <input type="email" id="email" required>
+    <div id="payment-request-button"></div>
+    <div id="card-element" class="StripeElement"></div>
+    <div id="card-errors"></div>
 
-  <label for="address1">Street Address</label>
-  <input type="text" id="address1" required>
+    <p><strong>Total:</strong> $5.00</p>
+    <button type="submit">Pay Now</button>
+  </form>
 
-  <label for="address2">Street Address 2 (optional)</label>
-  <input type="text" id="address2">
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
 
-  <label for="city">City</label>
-  <input type="text" id="city" required>
+    const card = elements.create("card");
+    card.mount("#card-element");
 
-  <label for="state">State/Territory</label>
-  <input type="text" id="state" required>
+    card.on("change", function(event) {
+      const displayError = document.getElementById("card-errors");
+      if (event.error) {
+        displayError.textContent = event.error.message;
+      } else {
+        displayError.textContent = "";
+      }
+    });
 
-  <label for="country">Country</label>
-  <input type="text" id="country" required>
+    const paymentRequest = stripe.paymentRequest({
+      country: "US",
+      currency: "usd",
+      total: {
+        label: "Charmers Bracelet",
+        amount: 500,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
 
-  <label for="size">Select Bracelet Size</label>
-  <select id="size" required>
-    <option value="XS">XS</option>
-    <option value="S">S</option>
-    <option value="M">M</option>
-    <option value="L">L</option>
-    <option value="XL">XL</option>
-    <option value="XXL">XXL</option>
-    <option value="XXXL">XXXL</option>
-  </select>
+    const prButton = elements.create("paymentRequestButton", {
+      paymentRequest,
+      style: {
+        paymentRequestButton: {
+          type: "default",
+          theme: "light",
+          height: "44px",
+        },
+      },
+    });
 
-  <div id="payment-request-button"></div>
-  <div id="card-element">Stripe Elements Only</div>
+    paymentRequest.canMakePayment().then(function(result) {
+      if (result) {
+        document.getElementById("payment-request-button").style.display = "block";
+        prButton.mount("#payment-request-button");
+      } else {
+        document.getElementById("payment-request-button").style.display = "none";
+      }
+    });
 
-  <button type="submit" id="submit">Submit Order</button>
-  <div class="powered-by">Powered by Stripe<br>pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc</div>
-</form>
+    paymentRequest.on("paymentmethod", function(ev) {
+      ev.complete("success");
+      alert("Payment successful via Apple Pay or Google Pay: " + ev.paymentMethod.id);
+    });
 
-<script>
-  const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
-
-  const elements = stripe.elements();
-  const card = elements.create("card");
-  card.mount("#card-element");
-
-  const paymentRequest = stripe.paymentRequest({
-    country: "US",
-    currency: "usd",
-    total: {
-      label: "Bracelet Order",
-      amount: 2000,
-    },
-    requestPayerName: true,
-    requestPayerEmail: true,
-  });
-
-  paymentRequest.canMakePayment().then(function(result) {
-    if (result) {
-      const prButton = elements.create("paymentRequestButton", {
-        paymentRequest: paymentRequest,
+    const form = document.getElementById("payment-form");
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+      stripe.createToken(card).then(function(result) {
+        if (result.error) {
+          document.getElementById("card-errors").textContent = result.error.message;
+        } else {
+          alert("Card Token Created: " + result.token.id);
+        }
       });
-      prButton.mount("#payment-request-button");
-    }
-  });
-
-  document.getElementById("payment-form").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    alert("Stripe Elements not connected to backend yet. Card form shown for demonstration.");
-  });
-</script>
-
+    });
+  </script>
 </body>
 </html>
