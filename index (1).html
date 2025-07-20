@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Charmers Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 4px; }
+    #payment-request-button { margin-top: 20px; }
+    #card-element { margin-top: 20px; }
+    #submit { margin-top: 20px; padding: 10px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Charmers Checkout</h2>
+  <form id="payment-form">
+    <label>Bracelet Customization:
+      <input id="customization" name="customization" required>
+    </label>
+
+    <label>Select Shipping:
+      <select id="shipping">
+        <option value="10">USA - Ground Advantage $10</option>
+        <option value="20">USA - Priority Mail $20</option>
+        <option value="50">USA - Priority Mail Express $50</option>
+        <option value="50">International Economy $50</option>
+        <option value="70">International Express $70</option>
+      </select>
+    </label>
+
+    <label>Name:
+      <input name="name" required>
+    </label>
+
+    <label>Phone Number:
+      <input name="phone" required>
+    </label>
+
+    <label>Email:
+      <input name="email" required>
+    </label>
+
+    <label>Street Address:
+      <input name="address1" required>
+    </label>
+
+    <label>Street Address 2 (Optional):
+      <input name="address2">
+    </label>
+
+    <label>City:
+      <input name="city" required>
+    </label>
+
+    <label>State/Territory:
+      <input name="state" required>
+    </label>
+
+    <label>Country:
+      <input name="country" required>
+    </label>
+
+    <label>Bracelet Size:
+      <select id="bracelet-size">
+        <option>XS</option><option>S</option><option>M</option><option>L</option>
+        <option>XL</option><option>XXL</option><option>XXXL</option>
+      </select>
+    </label>
+
+    <div id="payment-request-button"></div>
+
+    <div id="card-element"></div>
+
+    <div id="total" style="margin-top:10px; font-weight:bold;">Total: $0.00</div>
+
+    <button type="submit" id="submit">Pay Now</button>
+  </form>
+
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const cardElement = elements.create("card");
+    cardElement.mount("#card-element");
+
+    const shipping = document.getElementById("shipping");
+    const customization = document.getElementById("customization");
+    const totalDisplay = document.getElementById("total");
+
+    function calculatePrice() {
+      const charCount = customization.value.length;
+      let braceletPrice = 3;
+      if (charCount > 100) {
+        alert("Bracelet invalid over 100 characters");
+        return 0;
+      } else if (charCount > 30) {
+        braceletPrice = 15;
+      } else if (charCount > 12) {
+        braceletPrice = 10;
+      } else if (charCount >= 6) {
+        braceletPrice = 6;
+      }
+
+      const shippingCost = parseFloat(shipping.value);
+      const tax = (braceletPrice + shippingCost) * 0.1;
+      const total = braceletPrice + shippingCost + tax;
+      totalDisplay.textContent = `Total: $${total.toFixed(2)}`;
+      return Math.round(total * 100); // in cents
+    }
+
+    customization.addEventListener("input", calculatePrice);
+    shipping.addEventListener("change", calculatePrice);
+
+    const paymentRequest = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: {
+        label: 'Charmers Total',
+        amount: 0,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    paymentRequest.canMakePayment().then(function(result) {
+      if (result) {
+        const prButton = elements.create('paymentRequestButton', {
+          paymentRequest: paymentRequest,
+        });
+        prButton.mount('#payment-request-button');
+      } else {
+        document.getElementById('payment-request-button').style.display = 'none';
+      }
+    });
+
+    document.getElementById("payment-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = calculatePrice();
+
+      const {error, paymentMethod} = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (error) {
+        alert(error.message);
+      } else {
+        alert("Payment would now be processed. (Backend required for live charge.)");
+        window.location.href = `mailto:support@charmersbiz.org?subject=Order&body=Bracelet: ${customization.value}`;
+      }
+    });
+  </script>
+</body>
+</html>
