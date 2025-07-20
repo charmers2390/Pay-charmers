@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Charmers Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 30px;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+    #payment-request-button {
+      margin-bottom: 15px;
+    }
+    #card-element {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: #6772e5;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background: #5469d4;
+    }
+    .powered-by {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<form id="payment-form">
+  <h2>Charmers Checkout</h2>
+  <label for="customize">Bracelet Customization</label>
+  <textarea id="customize" required></textarea>
+
+  <label for="shipping">Select Shipping</label>
+  <select id="shipping" required>
+    <option value="">Choose...</option>
+    <option value="10">USA - Ground Advantage $10</option>
+    <option value="20">USA - Priority Mail $20</option>
+    <option value="50">USA - Priority Mail Express $50</option>
+    <option value="50">International Economy $50</option>
+    <option value="70">International Express $70</option>
+    <option value="unavailable">North Korea - Unavailable</option>
+    <option value="unavailable">South Korea - Unavailable</option>
+    <option value="unavailable">Antarctica - Unavailable</option>
+  </select>
+
+  <label for="name">Name</label>
+  <input type="text" id="name" required>
+
+  <label for="phone">Phone</label>
+  <input type="text" id="phone" required>
+
+  <label for="email">Email</label>
+  <input type="email" id="email" required>
+
+  <label for="address1">Street Address</label>
+  <input type="text" id="address1" required>
+
+  <label for="address2">Street Address 2 (optional)</label>
+  <input type="text" id="address2">
+
+  <label for="city">City</label>
+  <input type="text" id="city" required>
+
+  <label for="state">State/Territory</label>
+  <input type="text" id="state" required>
+
+  <label for="country">Country</label>
+  <input type="text" id="country" required>
+
+  <label for="size">Select Bracelet Size</label>
+  <select id="size" required>
+    <option value="XS">XS</option>
+    <option value="S">S</option>
+    <option value="M">M</option>
+    <option value="L">L</option>
+    <option value="XL">XL</option>
+    <option value="XXL">XXL</option>
+    <option value="XXXL">XXXL</option>
+  </select>
+
+  <div id="payment-request-button"></div>
+  <div id="card-element">Stripe Elements Only</div>
+
+  <button type="submit" id="submit">Submit Order</button>
+  <div class="powered-by">Powered by Stripe<br>pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc</div>
+</form>
+
+<script>
+  const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+
+  const elements = stripe.elements();
+  const card = elements.create("card");
+  card.mount("#card-element");
+
+  const paymentRequest = stripe.paymentRequest({
+    country: "US",
+    currency: "usd",
+    total: {
+      label: "Bracelet Order",
+      amount: 2000,
+    },
+    requestPayerName: true,
+    requestPayerEmail: true,
+  });
+
+  paymentRequest.canMakePayment().then(function(result) {
+    if (result) {
+      const prButton = elements.create("paymentRequestButton", {
+        paymentRequest: paymentRequest,
+      });
+      prButton.mount("#payment-request-button");
+    }
+  });
+
+  document.getElementById("payment-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    alert("Stripe Elements not connected to backend yet. Card form shown for demonstration.");
+  });
+</script>
+
+</body>
+</html>
