@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Charmers Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #d07eff, #ff79b0);
+      font-family: Arial, sans-serif;
+      color: #333;
+      padding: 20px;
+    }
+    form {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    input, select {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    label {
+      margin-bottom: 6px;
+      display: block;
+    }
+    #error-message {
+      color: red;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    #total-display {
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #4b0082;
+    }
+    #secondButton {
+      display: none;
+      background: #8000ff;
+      color: white;
+    }
+    button {
+      background: #ff00a2;
+      border: none;
+      color: white;
+      padding: 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .powered-by {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+    .powered-by a {
+      color: #8000ff;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <form id="checkout-form">
+    <h2>Charmers Secure Checkout</h2>
+
+    <div id="error-message"></div>
+
+    <label>Name</label>
+    <input type="text" name="name" required />
+
+    <label>Email</label>
+    <input type="email" name="email" required />
+
+    <label>Phone Number (optional)</label>
+    <input type="tel" name="phone"/>
+
+    <label>Bracelet Text</label>
+    <input type="text" name="bracelet" required id="bracelet"/>
+
+    <label>Shipping Method</label>
+    <select name="shipping" id="shipping" required>
+      <option value="">Select shipping</option>
+      <option value="9">Ground Advantage - $9</option>
+      <option value="13">Priority Mail - $13</option>
+      <option value="25">Priority Mail Express - $25</option>
+      <option value="47">International First Class - $47</option>
+      <option value="78">International Priority - $78</option>
+    </select>
+
+    <label>Processing Time</label>
+    <select name="processing" id="processing" required>
+      <option value="">Select processing time</option>
+      <option value="0.5">24 Hour Processing ($0.50)</option>
+      <option value="0">7 Day Processing (Free)</option>
+    </select>
+
+    <label>Street Address</label>
+    <input type="text" name="address" required />
+
+    <label>Street Address 2 (optional)</label>
+    <input type="text" name="address2"/>
+
+    <label>City</label>
+    <input type="text" name="city" required />
+
+    <label>State/Territory (optional)</label>
+    <input type="text" name="state"/>
+
+    <label>Postal Code</label>
+    <input type="text" name="postal" required />
+
+    <label>Country</label>
+    <input type="text" name="country" required />
+
+    <label><input type="checkbox" id="agree" required> By buying from Charmers you agree to our ToS and usage policies.</label>
+
+    <div class="g-recaptcha" data-sitekey="6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO" data-action="LOGIN"></div>
+
+    <div id="card-element" style="margin: 20px 0;"></div>
+
+    <div id="total-display">Order Total: $0.00</div>
+
+    <button id="submitButton" type="button">Complete Order</button>
+    <button id="secondButton" type="button">Complete Order (Send Email)</button>
+
+    <p class="powered-by">💳 Powered by <strong>Stripe</strong><br>For any refunds needed, <a href="https://refund.charmersbiz.org" target="_blank">click here</a>.</p>
+  </form>
+
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    let cardComplete = false;
+    card.on("change", (event) => { cardComplete = event.complete; });
+
+    function showError(msg) {
+      document.getElementById("error-message").innerText = msg;
+    }
+
+    function calculateBraceletPrice(text) {
+      if (!text) return 0;
+      const len = text.length;
+      if (len > 100) return 0; // invalid
+      if (len > 30) return 15;
+      if (len > 12) return 10;
+      if (len >= 6) return 6;
+      return 3;
+    }
+
+    function updateTotal() {
+      const bracelet = calculateBraceletPrice(document.getElementById("bracelet").value);
+      const shipping = parseFloat(document.getElementById("shipping").value) || 0;
+      const processing = parseFloat(document.getElementById("processing").value) || 0;
+      const stripeFee = 1.5;
+      const tax = 0.5;
+      const total = (bracelet + shipping + processing + stripeFee + tax).toFixed(2);
+      document.getElementById("total-display").innerText = `Order Total: $${total}`;
+      return parseInt(total * 100); // convert to cents
+    }
+
+    document.getElementById("bracelet").addEventListener("input", updateTotal);
+    document.getElementById("shipping").addEventListener("change", updateTotal);
+    document.getElementById("processing").addEventListener("change", updateTotal);
+
+    document.getElementById("submitButton").addEventListener("click", async () => {
+      const form = document.getElementById("checkout-form");
+      if (!form.checkValidity()) return showError("ERR-001: Please fill out all required fields.");
+      if (!document.getElementById("agree").checked) return showError("ERR-002: You must agree to the ToS.");
+      if (grecaptcha.getResponse().length === 0) return showError("ERR-003: Please complete the reCAPTCHA.");
+      if (!cardComplete) return showError("ERR-005: Please enter a valid card number.");
+
+      const amount = updateTotal(); // in cents
+      showError(""); // Clear error
+
+      const response = await fetch("https://charmerspay.onrender.com/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
+
+      const { clientSecret } = await response.json();
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card }
+      });
+
+      if (result.error) {
+        const code = result.error.code || "unknown";
+        const msg = result.error.message || "Something went wrong.";
+        showError(`402-${code.toUpperCase()}: ${msg}`);
+      } else {
+        document.getElementById("submitButton").innerText = "Order success — now press Complete Order";
+        document.getElementById("secondButton").style.display = "block";
+      }
+    });
+
+    document.getElementById("secondButton").addEventListener("click", () => {
+      const form = document.forms[0];
+      const body = `
+        Name: ${form.name.value}
+        Email: ${form.email.value}
+        Phone: ${form.phone.value}
+        Bracelet: ${form.bracelet.value}
+        Address: ${form.address.value} ${form.address2.value}
+        City: ${form.city.value}
+        State: ${form.state.value}
+        ZIP: ${form.postal.value}
+        Country: ${form.country.value}
+        Shipping: ${form.shipping.value}
+        Processing: ${form.processing.value}
+      `;
+      window.location.href = "mailto:support@charmersbiz.org?subject=Charmers Order&body=" + encodeURIComponent(body);
+    });
+
+    updateTotal(); // Initialize on load
+  </script>
+</body>
+</html>
