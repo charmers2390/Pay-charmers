@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Charmers Checkout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=explicit" async defer></script>
+  <style>
+    body {
+      background: linear-gradient(to right, purple, pink);
+      font-family: Arial, sans-serif;
+      color: white;
+      padding: 20px;
+    }
+    .form-box {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: auto;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+    #card-element, #payment-request-button {
+      margin-top: 20px;
+    }
+    #orderTotal {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #captcha-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+    button {
+      background: hotpink;
+      color: white;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-box">
+    <h2>Charmers Checkout</h2>
+    <form id="checkoutForm">
+      <input type="text" id="name" placeholder="Name" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="tel" id="phone" placeholder="Phone Number (optional)" />
+      <input type="text" id="bracelet" placeholder="Bracelet Text" required />
+      <select id="shipping" required>
+        <option value="">Choose Shipping</option>
+        <option value="9">Ground Advantage - $9</option>
+        <option value="13">Priority Mail - $13</option>
+        <option value="25">Priority Mail Express - $25</option>
+        <option value="47">USPS First Class Intl - $47</option>
+        <option value="78">USPS Priority Intl - $78</option>
+      </select>
+      <select id="processing" required>
+        <option value="0.5">24 Hour Processing - $0.50</option>
+        <option value="0">7 Day Processing - $0.00</option>
+      </select>
+      <input type="text" id="street" placeholder="Street Address" required />
+      <input type="text" id="street2" placeholder="Street Address 2 (optional)" />
+      <input type="text" id="city" placeholder="City" required />
+      <input type="text" id="state" placeholder="State/Territory (optional)" />
+      <input type="text" id="postal" placeholder="Postal Code" required />
+      <input type="text" id="country" placeholder="Country" required />
+      <div id="orderTotal">Order Total: $0.00</div>
+      <div id="captcha-container"><div id="recaptcha-widget"></div></div>
+      <div id="payment-request-button"></div>
+      <div id="card-element"></div>
+      <button id="payNow">Complete Order</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const form = document.getElementById("checkoutForm");
+    const payBtn = document.getElementById("payNow");
+    const message = document.getElementById("message");
+
+    const calculateTotal = () => {
+      const len = document.getElementById("bracelet").value.length;
+      let base = 0;
+      if (len > 100) base = 0;
+      else if (len > 30) base = 15;
+      else if (len > 12) base = 10;
+      else if (len >= 6) base = 6;
+      else base = 3;
+
+      const shipping = parseFloat(document.getElementById("shipping").value || 0);
+      const processing = parseFloat(document.getElementById("processing").value || 0);
+      const total = base + shipping + processing;
+      document.getElementById("orderTotal").innerText = `Order Total: $${total.toFixed(2)}`;
+      return total;
+    };
+
+    form.addEventListener("input", calculateTotal);
+
+    function loadRecaptcha() {
+      if (typeof grecaptcha !== 'undefined') {
+        grecaptcha.enterprise.render('recaptcha-widget', {
+          sitekey: '6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO'
+        });
+      } else {
+        setTimeout(loadRecaptcha, 500);
+      }
+    }
+    window.onload = loadRecaptcha;
+
+    payBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const total = Math.round(calculateTotal() * 100);
+
+      const response = await fetch("https://charmerspay.onrender.com/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: total })
+      });
+      const { clientSecret } = await response.json();
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: card,
+          billing_details: {
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value
+          }
+        }
+      });
+
+      if (result.error) {
+        message.innerText = "Your payment failed.";
+      } else {
+        if (result.paymentIntent.status === "succeeded") {
+          message.innerText = "Your order was processed. Expect a confirmation email from Charmers soon.";
+        }
+      }
+
+      // Send to backend
+      const formData = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        bracelet: document.getElementById("bracelet").value,
+        shipping: document.getElementById("shipping").value,
+        processing: document.getElementById("processing").value,
+        street: document.getElementById("street").value,
+        street2: document.getElementById("street2").value,
+        city: document.getElementById("city").value,
+        state: document.getElementById("state").value,
+        postal: document.getElementById("postal").value,
+        country: document.getElementById("country").value,
+        total: (total / 100).toFixed(2)
+      };
+
+      await fetch("https://charmerspay.onrender.com/save-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+    });
+  </script>
+</body>
+</html>
