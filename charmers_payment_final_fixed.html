@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Charmers Final Checkout</title>
+  <style>
+    body {
+      background: linear-gradient(to right, purple, pink);
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    .form-container {
+      background-color: #2d2d2d;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      border-radius: 10px;
+    }
+    .form-container input, .form-container select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0 15px 0;
+      border: none;
+      border-radius: 5px;
+    }
+    .form-container button {
+      background-color: hotpink;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .form-container button:hover {
+      background-color: deeppink;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+    .checkbox-group input {
+      margin-right: 10px;
+    }
+    #payment-message {
+      text-align: center;
+      color: lightgreen;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO"></script>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Charmers Final Checkout</h2>
+    <form id="checkoutForm">
+      <input type="text" name="name" placeholder="Name" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="tel" name="phone" placeholder="Phone Number (optional)" />
+      <input type="text" name="bracelet" placeholder="Bracelet Text" required />
+      <select name="shipping" required>
+        <option value="">Select Shipping</option>
+        <option value="9">Ground Advantage - $9</option>
+        <option value="13">Priority Mail - $13</option>
+        <option value="25">Priority Mail Express - $25</option>
+        <option value="47">USPS First Class International - $47</option>
+        <option value="78">USPS Priority Mail International - $78</option>
+      </select>
+      <select name="processing" required>
+        <option value="0.5">Charmers 24 Hour Processing™ - $0.50</option>
+        <option value="0">Charmers Seven Day 12 Hours Processing™ - $0.00</option>
+      </select>
+      <input name="street" type="text" placeholder="Street Address" required />
+      <input name="street2" type="text" placeholder="Street Address 2 (optional)" />
+      <input name="city" type="text" placeholder="City" required />
+      <input name="state" type="text" placeholder="State/Territory (optional)" />
+      <input name="postal" type="text" placeholder="Postal Code" required />
+      <input name="country" type="text" placeholder="Country" required />
+      <div class="checkbox-group">
+        <input type="checkbox" id="tos" required />
+        <label for="tos">I agree to the <a href="https://tos.charmersbiz.org" target="_blank">ToS and usage policies</a></label>
+      </div>
+      <div class="g-recaptcha" data-sitekey="6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO"></div>
+      <p id="total">Order Total: $0.00</p>
+    </form>
+    <div id="payment-request-button" style="margin-top: 20px;"></div>
+    <div id="card-element"></div>
+    <button id="payBtn">Complete Order</button>
+    <p id="payment-message"></p>
+  </div>
+
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const form = document.getElementById("checkoutForm");
+    const payBtn = document.getElementById("payBtn");
+    const message = document.getElementById("payment-message");
+    const prButton = document.getElementById("payment-request-button");
+
+    function calculateTotal() {
+      const text = form.bracelet.value.trim();
+      const shipping = parseFloat(form.shipping.value || 0);
+      const processing = parseFloat(form.processing.value || 0);
+      let bracelet = 0;
+      if (text.length > 100) return "BLOCKED";
+      if (text.length > 30) bracelet = 15;
+      else if (text.length > 12) bracelet = 10;
+      else if (text.length >= 6) bracelet = 6;
+      else bracelet = 3;
+      return (bracelet + shipping + processing).toFixed(2);
+    }
+
+    function isFormFilled() {
+      return form.name.value && form.email.value && form.bracelet.value &&
+             form.shipping.value && form.processing.value;
+    }
+
+    function gatherFormData() {
+      const data = {};
+      new FormData(form).forEach((v, k) => data[k] = v);
+      return data;
+    }
+
+    function sendToBackend(order, status, method) {
+      fetch("https://charmerspay.onrender.com/save-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...order, status, method })
+      });
+    }
+
+    async function createIntent(amount) {
+      const res = await fetch("https://charmerspay.onrender.com/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
+      const data = await res.json();
+      return data.clientSecret;
+    }
+
+    payBtn.addEventListener("click", async () => {
+      const total = calculateTotal();
+      if (total === "BLOCKED") return alert("Bracelet text too long.");
+      grecaptcha.enterprise.ready(async () => {
+        const token = await grecaptcha.enterprise.execute('6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO', { action: 'submit' });
+        const order = gatherFormData();
+        const amount = parseFloat(total) * 100;
+        try {
+          const clientSecret = await createIntent(Math.round(amount));
+          const result = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card,
+              billing_details: { name: order.name, email: order.email }
+            }
+          });
+          if (result.error) {
+            message.textContent = "Your payment failed.";
+            sendToBackend(order, "failure", "card");
+          } else {
+            message.textContent = "Your order was processed. Expect a confirmation email from Charmers soon.";
+            sendToBackend(order, "success", "card");
+          }
+        } catch {
+          message.textContent = "Your payment failed.";
+          sendToBackend(order, "failure", "card");
+        }
+      });
+    });
+
+    const paymentRequest = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: { label: 'Charmers Order', amount: 0 },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    const pr = elements.create("paymentRequestButton", { paymentRequest });
+
+    function maybeShowPayRequest() {
+      if (isFormFilled()) {
+        paymentRequest.canMakePayment().then(result => {
+          if (result) pr.mount("#payment-request-button");
+        });
+      }
+    }
+
+    ["name", "email", "bracelet", "shipping", "processing"].forEach(id =>
+      form[id].addEventListener("input", maybeShowPayRequest)
+    );
+
+    paymentRequest.on("paymentmethod", async (ev) => {
+      const order = gatherFormData();
+      const total = calculateTotal();
+      const amount = parseFloat(total) * 100;
+      try {
+        const clientSecret = await createIntent(Math.round(amount));
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: ev.paymentMethod.id
+        }, { handleActions: false });
+
+        if (result.error) {
+          ev.complete("fail");
+          message.textContent = "Your payment failed.";
+          sendToBackend(order, "failure", "apple_google_link");
+        } else {
+          ev.complete("success");
+          message.textContent = "Your order was processed. Expect a confirmation email from Charmers soon.";
+          sendToBackend(order, "success", "apple_google_link");
+        }
+      } catch {
+        ev.complete("fail");
+        message.textContent = "Your payment failed.";
+        sendToBackend(order, "failure", "apple_google_link");
+      }
+    });
+  </script>
+</body>
+</html>
