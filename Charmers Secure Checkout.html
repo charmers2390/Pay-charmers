@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<!-- saved from url=(0028)https://pay.charmersbiz.org/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charmers Secure Checkout</title>
+  <link rel="icon" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..." type="image/jpeg">
+  <style>
+    body {
+      background: linear-gradient(to right, purple, pink);
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+    .form-container {
+      background-color: #2d2d2d;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      border-radius: 10px;
+    }
+    .form-container input, .form-container select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0 15px 0;
+      border: none;
+      border-radius: 5px;
+    }
+    .form-container button {
+      background-color: hotpink;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .form-container button:hover {
+      background-color: deeppink;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+    }
+    .checkbox-group input {
+      margin-right: 10px;
+    }
+    .footer {
+      font-size: 12px;
+      text-align: center;
+      margin-top: 10px;
+    }
+    #payment-message {
+      text-align: center;
+      color: lightgreen;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+  <script type="text/javascript" async="" charset="utf-8" src="./Charmers Secure Checkout_files/recaptcha__en.js.download" crossorigin="anonymous" integrity="sha384-TG5g5Dk43Fs+5i/7xL9a4bBQ4Pg/EAutBT8nLaRiYl1GoFPQDxyCkJYzTQEw2Njo"></script><script src="./Charmers Secure Checkout_files/saved_resource"></script>
+  <script src="./Charmers Secure Checkout_files/enterprise.js.download" async="" defer=""></script>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Charmers Secure Checkout</h2>
+    <div id="payment-request-button" style="display: none;"></div>
+    <form id="checkoutForm">
+      <input type="text" name="name" placeholder="Name" required="">
+      <input type="email" name="email" placeholder="Email" required="">
+      <input type="tel" name="phone" placeholder="Phone Number (optional)">
+      <input type="text" name="bracelet" placeholder="Bracelet Text" required="">
+      <select name="shipping" required="">
+        <option value="">Select Shipping</option>
+        <option value="9">Ground Advantage - $9</option>
+        <option value="13">Priority Mail - $13</option>
+        <option value="25">Priority Mail Express - $25</option>
+        <option value="47">USPS First Class International - $47</option>
+        <option value="78">USPS Priority Mail International - $78</option>
+      </select>
+      <select name="processing" required="">
+        <option value="0.5">Charmers 24 Hour Processing™ - $0.50</option>
+        <option value="0">Charmers Seven Day 12 Hours Processing™ - $0.00</option>
+      </select>
+      <input name="street" type="text" placeholder="Street Address" required="">
+      <input name="street2" type="text" placeholder="Street Address 2 (optional)">
+      <input name="city" type="text" placeholder="City" required="">
+      <input name="state" type="text" placeholder="State/Territory (optional)">
+      <input name="postal" type="text" placeholder="Postal Code" required="">
+      <input name="country" type="text" placeholder="Country" required="">
+
+      <div id="card-element" class="StripeElement StripeElement--empty"><div class="__PrivateStripeElement" style="margin: 0px !important; padding: 0px !important; border: none !important; display: block !important; background: transparent !important; position: relative !important; opacity: 1 !important;"><iframe name="__privateStripeFrame8593" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="./Charmers Secure Checkout_files/elements-inner-card-241ac84038751a47ee09d86661bd3140.html" title="Secure card payment input frame" style="border: 0px !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; user-select: none !important; transform: translate(0px) !important; color-scheme: light only !important; height: 16.8px;"></iframe><input class="__PrivateStripeElement-input" aria-hidden="true" aria-label=" " autocomplete="false" maxlength="1" style="border: none !important; display: block !important; position: absolute !important; height: 1px !important; top: -1px !important; left: 0px !important; padding: 0px !important; margin: 0px !important; width: 100% !important; opacity: 0 !important; background: transparent !important; pointer-events: none !important; font-size: 16px !important;"></div></div>
+      <div id="card-errors" role="alert" style="color: red;"></div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="tos" required="">
+        <label for="tos">I agree to the <a href="https://tos.charmersbiz.org/" target="_blank">ToS and usage policies</a></label>
+      </div>
+      <div class="g-recaptcha" data-sitekey="6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO" data-action="LOGIN"><div style="width: 304px; height: 78px;"><div><iframe title="reCAPTCHA" width="304" height="78" role="presentation" name="a-rwthfiggvm2q" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="./Charmers Secure Checkout_files/anchor.html"></iframe></div><textarea id="g-recaptcha-response" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;" src="./Charmers Secure Checkout_files/saved_resource.html"></iframe></div>
+      <p id="total">Order Total: $0.50</p>
+      <button id="submitBtn" type="submit">Complete Order</button>
+      <p id="payment-message"></p>
+    </form>
+    <div class="footer">
+      Powered by Stripe<br>
+      For any refunds needed, <a href="https://refund.charmersbiz.org/">click here</a>.
+    </div>
+  </div>
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    function calculateTotal() {
+      const text = document.querySelector("input[name='bracelet']").value.trim();
+      const shipping = parseFloat(document.querySelector("select[name='shipping']").value || 0);
+      const processing = parseFloat(document.querySelector("select[name='processing']").value || 0);
+      let bracelet = 0;
+      if (text.length > 100) return "BLOCKED";
+      if (text.length > 30) bracelet = 15;
+      else if (text.length > 12) bracelet = 10;
+      else if (text.length >= 6) bracelet = 6;
+      else if (text.length > 0) bracelet = 3;
+      return (bracelet + shipping + processing).toFixed(2);
+    }
+
+    function validateFields() {
+      const required = ['name', 'email', 'bracelet', 'shipping', 'processing'];
+      return required.every(field => {
+        const el = document.querySelector(`[name="${field}"]`);
+        return el && el.value.trim() !== "";
+      }) && calculateTotal() !== "BLOCKED";
+    }
+
+    function updateTotalDisplay() {
+      const total = calculateTotal();
+      document.getElementById("total").textContent = total === "BLOCKED"
+        ? "Bracelet text too long (max 100 chars)"
+        : "Order Total: $" + total;
+    }
+
+    const paymentRequest = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: {
+        label: 'Charmers Order',
+        amount: 0,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    const prButton = elements.create("paymentRequestButton", {
+      paymentRequest: paymentRequest,
+    });
+
+    function maybeShowPaymentRequestButton() {
+      if (validateFields()) {
+        const amount = parseFloat(calculateTotal()) * 100;
+        paymentRequest.update({
+          total: {
+            label: "Charmers Order",
+            amount: Math.round(amount)
+          }
+        });
+        prButton.mount("#payment-request-button");
+      } else {
+        prButton.unmount();
+      }
+    }
+
+    document.querySelectorAll("input, select").forEach(el => {
+      el.addEventListener("input", () => {
+        updateTotalDisplay();
+        maybeShowPaymentRequestButton();
+      });
+      el.addEventListener("change", () => {
+        updateTotalDisplay();
+        maybeShowPaymentRequestButton();
+      });
+    });
+
+    paymentRequest.canMakePayment().then(result => {
+      if (!result) {
+        document.getElementById("payment-request-button").style.display = "none";
+      }
+    });
+
+    card.on("change", function (event) {
+      const displayError = document.getElementById("card-errors");
+      displayError.textContent = event.error ? event.error.message : "";
+    });
+
+    document.getElementById("checkoutForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+
+      const total = calculateTotal();
+      if (total === "BLOCKED") {
+        alert("Bracelet text too long. Max 100 characters.");
+        btn.disabled = false;
+        return;
+      }
+
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: "card",
+        card: card,
+        billing_details: {
+          name: document.querySelector("input[name='name']").value,
+          email: document.querySelector("input[name='email']").value,
+        },
+      });
+
+      if (error) {
+        document.getElementById("card-errors").textContent = error.message;
+        btn.disabled = false;
+      } else {
+        document.getElementById("payment-message").textContent = "Order success, now press Complete Order again to email it!";
+        btn.disabled = false;
+
+        const mailBtn = document.createElement("button");
+        mailBtn.textContent = "Send Order Details";
+        mailBtn.style.marginTop = "10px";
+        mailBtn.onclick = function () {
+          const fields = [...document.querySelectorAll("form input, form select")];
+          const body = fields.map(el =>
+            el.name ? `${el.name.charAt(0).toUpperCase() + el.name.slice(1)}: ${el.value}` : ""
+          ).join("%0D%0A");
+
+          window.location.href = `mailto:support@charmersbiz.org?subject=New Charmers Order&body=${body}`;
+        };
+        document.querySelector(".form-container").appendChild(mailBtn);
+      }
+    });
+
+    updateTotalDisplay();
+  </script><iframe name="__privateStripeController8591" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="./Charmers Secure Checkout_files/controller-with-preconnect-5a36fe2c2535598fcaa691bccb04249a.html" aria-hidden="true" tabindex="-1" style="border: none !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important; user-select: none !important;"></iframe><iframe name="__privateStripeFrame8594" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="./Charmers Secure Checkout_files/payment-request-inner-browser-b1ed10b8a084303e00c06d4dde12dc7c.html" aria-hidden="true" tabindex="-1" style="border: none !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important; user-select: none !important;"></iframe>
+
+
+<div style="background-color: rgb(255, 255, 255); border: 1px solid rgb(204, 204, 204); box-shadow: rgba(0, 0, 0, 0.2) 2px 2px 3px; position: absolute; transition: visibility linear 0.3s, opacity 0.3s linear; opacity: 0; visibility: hidden; z-index: 2000000000; left: 0px; top: -10000px;"><div style="width: 100%; height: 100%; position: fixed; top: 0px; left: 0px; z-index: 2000000000; background-color: rgb(255, 255, 255); opacity: 0.05;"></div><div class="g-recaptcha-bubble-arrow" style="border: 11px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -11px; z-index: 2000000000;"></div><div class="g-recaptcha-bubble-arrow" style="border: 10px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -10px; z-index: 2000000000;"></div><div style="z-index: 2000000000; position: relative;"><iframe title="recaptcha challenge expires in two minutes" name="c-rwthfiggvm2q" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="./Charmers Secure Checkout_files/bframe.html" style="width: 100%; height: 100%;"></iframe></div></div><iframe frameborder="0" allowtransparency="true" scrolling="no" name="hcaptcha-invisible" referrerpolicy="no-referrer" aria-hidden="true" tabindex="-1" src="./Charmers Secure Checkout_files/hcaptcha-invisible-a1b7ff74e70ca25513c2e0f81a54dc90.html" style="border: none !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important; user-select: none !important;" data-initialized="true"></iframe><iframe name="__privateStripeMetricsController8590" frameborder="0" allowtransparency="true" scrolling="no" role="presentation" allow="payment *" src="https://js.stripe.com/v3/m-outer-3437aaddcdf6922d623e172c2d6f9278.html#url=https%3A%2F%2Fpay.charmersbiz.org%2F&amp;title=Charmers%20Secure%20Checkout&amp;referrer=https%3A%2F%2Fhome.charmersbiz.org%2F&amp;muid=NA&amp;sid=NA&amp;version=6&amp;preview=false&amp;__shared_params__[version]=v3" aria-hidden="true" tabindex="-1" style="border: none !important; margin: 0px !important; padding: 0px !important; width: 1px !important; min-width: 100% !important; overflow: hidden !important; display: block !important; visibility: hidden !important; position: fixed !important; height: 1px !important; pointer-events: none !important; user-select: none !important;"></iframe></body></html>
