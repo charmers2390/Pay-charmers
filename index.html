@@ -484,7 +484,7 @@
             return;
           }
 
-          const piRes = await fetch(`${BACKEND_BASE}/create-payment-intent`, {
+          const piRes = await fetch(`https://charmerspay.onrender.com/create-payment-intent`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
