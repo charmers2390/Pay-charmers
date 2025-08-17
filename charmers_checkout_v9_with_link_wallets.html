@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Charmers Checkout</title>
+  <link rel="icon" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..." type="image/jpeg">
+  <style>
+    :root {
+      --bg1: #6a0dad;
+      --bg2: #ff69b4;
+      --card: #1f1f1f;
+      --text: #ffffff;
+      --muted: #cfcfcf;
+      --accent: #ff69b4;
+      --accent-hover: #ff1493;
+      --danger: #ff6b6b;
+      --success: #90ee90;
+      --warn: #ffd166;
+      --overlay: rgba(0,0,0,0.45);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .form-container {
+      background: var(--card);
+      width: 100%;
+      max-width: 820px;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    .subtitle { color: var(--muted); margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-1 { grid-template-columns: 1fr; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #333;
+      background: #2a2a2a; color: var(--text); outline: none;
+    }
+    input::placeholder, textarea::placeholder { color: #9e9e9e; }
+    .row { margin-bottom: 12px; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 14px; }
+    a { color: #ffd1e8; }
+    #payment-request-wrap { margin: 10px 0 12px; position: relative; }
+    #payment-request-button { width: 100%; }
+    .pr-overlay {
+      position: absolute; inset: 0; background: var(--overlay); border-radius: 10px;
+      display: none; align-items: center; justify-content: center; text-align: center; padding: 10px;
+      font-size: 13px; line-height: 1.3;
+    }
+    .stripe-hosted { background: #2a2a2a; padding: 10px 12px; border-radius: 10px; border: 1px solid #333; }
+    fieldset { border: 1px solid #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    legend { color: var(--muted); padding: 0 6px; }
+    .pair { display:flex; gap:12px; }
+    .pair > div { flex: 1; }
+    .totals {
+      background: #232323; border: 1px solid #333; border-radius: 12px; padding: 12px; margin-top: 8px;
+      font-size: 14px; line-height: 1.5;
+    }
+    .totals .line { display: flex; justify-content: space-between; }
+    .totals .grand { margin-top: 8px; font-weight: 700; font-size: 16px; }
+    .btn { background: var(--accent); color: #fff; border: none; border-radius: 12px;
+      padding: 12px 14px; width: 100%; font-weight: 700; cursor: pointer; transition: background .2s ease; margin-top: 10px; }
+    .btn:hover { background: var(--accent-hover); }
+    .btn[disabled] { opacity: .65; cursor: not-allowed; }
+    #card-errors { color: var(--danger); min-height: 18px; margin-top: 6px; font-size: 13px; }
+    #payment-message { text-align: center; font-weight: 700; margin-top: 10px; min-height: 20px; }
+    #payment-message.success { color: var(--success); }
+    #payment-message.fail { color: var(--danger); }
+    .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 14px; }
+    #tooLong { color: var(--danger); display:none; margin-top:6px; }
+    #recaptcha-container { margin-top: 8px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .legal-guard { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .inline-warning { background: #3a2a00; border: 1px solid #775f00; color: var(--warn); padding: 8px 10px; border-radius: 8px; font-size: 12px; margin-top: 8px; display:none;}
+    .avail { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .avail b { color: #fff; }
+    #payment-section { margin-top: 12px; }
+    #payment-element, #link-authentication-element { padding: 10px 12px; background: #2a2a2a; border: 1px solid #333; border-radius: 10px; }
+  </style>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=explicit"></script>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Charmers Checkout</h2>
+    <div class="subtitle">Secure payment powered by Stripe</div>
+
+    <div id="payment-request-wrap">
+      <div id="payment-request-button"></div>
+      <div id="pr-overlay" class="pr-overlay">Complete ToS & reCAPTCHA to use Apple&nbsp;Pay / Google&nbsp;Pay.</div>
+    </div>
+    <div id="wallet-avail" class="avail"></div>
+
+    <form id="checkoutForm" class="grid grid-1" autocomplete="on">
+      <div class="row">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" placeholder="Full name" required>
+      </div>
+      <div class="row">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com" required>
+      </div>
+      <div class="row">
+        <label for="phone">Phone (optional)</label>
+        <input id="phone" name="phone" type="tel" placeholder="(optional)">
+      </div>
+
+      <fieldset>
+        <legend>Bracelet Customization</legend>
+        <div class="row">
+          <label for="bracelet">Bracelet Text</label>
+          <input id="bracelet" name="bracelet" type="text" placeholder="Your custom text" required>
+          <div id="tooLong">Bracelet text too long (max 100 chars).</div>
+        </div>
+
+        <div class="pair">
+          <div>
+            <label for="size">Size</label>
+            <select id="size" name="size" required>
+              <option value="">Select size</option>
+              <option value="S">Small</option>
+              <option value="M">Medium</option>
+              <option value="L">Large</option>
+              <option value="XL">Extra Large</option>
+            </select>
+          </div>
+          <div>
+            <label for="type">Type</label>
+            <select id="type" name="type" required>
+              <option value="normal">Normal (Free)</option>
+              <option value="complex">Complex (+$1)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div>
+            <label for="color1">Bracelet Color 1</label>
+            <select id="color1" name="color1" required>
+              <option value="">Select color</option>
+              <option>cyan</option><option>orange</option><option>red</option><option>black</option>
+              <option>blue</option><option>pink</option><option>purple</option><option>yellow</option>
+              <option>green</option><option>cyan mix</option><option>dark green</option><option>light green</option>
+              <option>light yellow</option><option>dark purple</option>
+            </select>
+          </div>
+          <div>
+            <label for="color2">Bracelet Color 2 (optional)</label>
+            <select id="color2" name="color2">
+              <option value="">(none)</option>
+              <option>cyan</option><option>orange</option><option>red</option><option>black</option>
+              <option>blue</option><option>pink</option><option>purple</option><option>yellow</option>
+              <option>green</option><option>cyan mix</option><option>dark green</option><option>light green</option>
+              <option>light yellow</option><option>dark purple</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div>
+            <label for="beads">Beads</label>
+            <select id="beads" name="beads">
+              <option value="">(none)</option>
+              <option value="circle">Circle</option>
+              <option value="rectangle">Rectangle</option>
+              <option value="letters">Letters</option>
+            </select>
+          </div>
+          <div id="lettersWrap" style="display:none;">
+            <label for="lettersText">Letters (if chosen)</label>
+            <input id="lettersText" name="lettersText" type="text" placeholder="What should the letters say?">
+          </div>
+        </div>
+
+        <div class="row">
+          <label for="style">Preset Styles (disables size)</label>
+          <select id="style" name="style">
+            <option value="">(none)</option>
+            <option value="fire_ice" data-price="6">Fire and ice — $6</option>
+            <option value="charmers_trio" data-price="10">Charmers, trio — $10</option>
+            <option value="pink_navy" data-price="5">Pink and navy — $5</option>
+          </select>
+          <div class="hint">If a style is selected, the bracelet price is based on the style and size is not used.</div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Shipping</legend>
+        <div class="pair">
+          <div>
+            <label for="shipping">Shipping</label>
+            <select id="shipping" name="shipping" required>
+              <option value="">Select Shipping</option>
+              <option value="9">Ground Advantage - $9</option>
+              <option value="13">Priority Mail - $13</option>
+              <option value="25">Priority Mail Express - $25</option>
+              <option value="47">USPS First Class International - $47</option>
+              <option value="78">USPS Priority Mail International - $78</option>
+            </select>
+          </div>
+          <div>
+            <label for="processing">Processing</label>
+            <select id="processing" name="processing" required>
+              <option value="0.50">Charmers 24 Hour Processing™ - $0.50</option>
+              <option value="0">Charmers Seven Day 12 Hours Processing™ - $0.00</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Address</legend>
+        <div class="row">
+          <label for="street">Street Address</label>
+          <input id="street" name="street" type="text" placeholder="Street address" required>
+        </div>
+        <div class="row">
+          <label for="street2">Street Address 2 (optional)</label>
+          <input id="street2" name="street2" type="text" placeholder="Apt, suite, etc. (optional)">
+        </div>
+        <div class="pair">
+          <div>
+            <label for="city">City</label>
+            <input id="city" name="city" type="text" required>
+          </div>
+          <div>
+            <label for="state">State/Territory (optional)</label>
+            <input id="state" name="state" type="text">
+          </div>
+        </div>
+        <div class="pair">
+          <div>
+            <label for="postal">Postal Code</label>
+            <input id="postal" name="postal" type="text" required>
+          </div>
+          <div>
+            <label for="country">Country</label>
+            <input id="country" name="country" type="text" required>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset id="payment-section">
+        <legend>Pay with Card, Link, or more</legend>
+        <div id="link-authentication-element"></div>
+        <div id="payment-element" class="stripe-hosted"></div>
+        <div id="card-errors" role="alert"></div>
+        <div id="card-warn" class="inline-warning">Stripe Payment Element could not initialize. Ensure HTTPS and a valid publishable key.</div>
+      </fieldset>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="tos" required>
+        <label for="tos">I agree to the <a href="https://tos.charmersbiz.org/" target="_blank" rel="noopener">ToS and usage policies</a></label>
+      </div>
+
+      <div id="recaptcha-container"></div>
+      <div id="recaptcha-warn" class="inline-warning">reCAPTCHA could not load. Serve over HTTPS and allow the site key on this domain.</div>
+      <div class="legal-guard">Please complete the security check to continue.</div>
+
+      <div class="totals" id="totalsBox">
+        <div class="line"><span>Bracelet/Style</span><span id="priceBracelet">$0.00</span></div>
+        <div class="line"><span>Type</span><span id="priceType">$0.00</span></div>
+        <div class="line"><span>Shipping</span><span id="priceShipping">$0.00</span></div>
+        <div class="line"><span>Processing</span><span id="priceProcessing">$0.00</span></div>
+        <div class="grand"><span>Total</span> <span id="priceTotal">$0.00</span></div>
+      </div>
+
+      <button id="submitBtn" class="btn" type="button">Complete Payment</button>
+      <button id="emailBtn" class="btn" type="button" style="display:none;">Submit Order (Email Us)</button>
+      <div class="hint" id="emailHint" style="display:none;">This opens your email app and sends the full order to Charmers.</div>
+
+      <div id="payment-message"></div>
+    </form>
+
+    <div class="footer">
+      Powered by Stripe • For refunds, <a href="https://refund.charmersbiz.org/" target="_blank" rel="noopener">click here</a>.
+    </div>
+  </div>
+
+  <script>
+    const STRIPE_PK = "pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc";
+    const RECAPTCHA_SITE_KEY = "6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO";
+    const CREATE_URL = "https://charmerspay.onrender.com/create-payment-intent";
+    const SAVE_URL   = "https://charmerspay.onrender.com/saveorder";
+    const MAILTO_TO  = "support@charmersbiz.org";
+
+    function $(id){return document.getElementById(id);}
+    function currency(n){return `$${(Math.round(Number(n)*100)/100).toFixed(2)}`;}
+    function getFields(){const d={}; new FormData($('checkoutForm')).forEach((v,k)=>d[k]=v); return d;}
+    function isBlocked(t){return t && t.trim().length>100;}
+    function show(el,yes){ if(el) el.style.display = yes?'block':'none'; }
+
+    let stripe=null, elements=null, paymentElement=null, linkElement=null;
+    let pr, prButton, prSupported=false, prCapabilities=null;
+    let recaptchaWidgetId = null;
+    let lastPaymentIntentId = null;
+    let currentClientSecret = null;
+    let ensurePETimeout = null;
+
+    // ===== Pricing =====
+    function computeBraceletPrice(){
+      const f = getFields();
+      const text=(f.bracelet||"").trim();
+      if(isBlocked(text)) return {price:0,blocked:true};
+      const styleSel = $('style');
+      const stylePrice = Number(styleSel?.options[styleSel.selectedIndex]?.dataset?.price || 0);
+      if(styleSel.value) return {price:stylePrice,blocked:false,used:"style"};
+      const size=f.size||""; if(!size) return {price:0,blocked:false,used:"size"};
+      const twoColors=(f.color2||"").trim()!=="";
+      const beads=(f.beads||"").trim()!=="";
+      const premium=twoColors||beads;
+      const single={S:3,M:5,L:7,XL:10};
+      const prem={S:5,M:6,L:8,XL:11};
+      return {price:(premium?prem:single)[size]||0,blocked:false};
+    }
+    function computeTypePrice(){ const f=getFields(); return f.type==="complex"?1:0; }
+    function calcPricing(){
+      const f=getFields();
+      const shipping=parseFloat(f.shipping||0);
+      const processing=parseFloat(f.processing||0);
+      const b=computeBraceletPrice();
+      const t=computeTypePrice();
+      const total=b.blocked?0:(b.price+t+shipping+processing);
+      return {b,shipping,processing,t,total,blocked:b.blocked};
+    }
+    function updateTotalsUI(){
+      const p=calcPricing();
+      $('priceBracelet').textContent = currency(p.b.price);
+      $('priceType').textContent = currency(p.t);
+      $('priceShipping').textContent = currency(p.shipping);
+      $('priceProcessing').textContent = currency(p.processing);
+      $('priceTotal').textContent = currency(p.total);
+      $('tooLong').style.display = p.blocked ? "block":"none";
+      if (prSupported && !p.blocked) pr.update({ total: { label: "Charmers Order", amount: Math.round(p.total*100) } });
+      gateWallet();
+      debouncedEnsurePaymentElement();
+    }
+
+    // ===== Legal gating (ToS + reCAPTCHA) =====
+    function currentRecaptchaResponse(){
+      try{ if(window.grecaptcha && grecaptcha.enterprise && recaptchaWidgetId!==null){ return grecaptcha.enterprise.getResponse(recaptchaWidgetId) || ""; } }catch{}
+      return "";
+    }
+    function legalOk(){ return $('tos').checked && !!currentRecaptchaResponse(); }
+    function validForWallet(){
+      const f=getFields();
+      const req=["name","email","bracelet","shipping","processing"];
+      return req.every(k=> (f[k]||"").toString().trim()!=="") && !calcPricing().blocked;
+    }
+    function gateWallet(){
+      const showOverlay = !(legalOk() && validForWallet());
+      $('pr-overlay').style.display = showOverlay ? "flex" : "none";
+    }
+
+    // ===== Stripe init =====
+    function initStripe(){
+      if(!window.Stripe){ console.error("Stripe.js failed to load"); return; }
+      stripe = Stripe(STRIPE_PK);
+      initPaymentRequest();
+    }
+
+    // ===== Payment Request (Apple/Google Pay) =====
+    function initPaymentRequest(){
+      pr = stripe.paymentRequest({
+        country: "US",
+        currency: "usd",
+        total: { label: "Charmers Order", amount: Math.round(calcPricing().total*100) },
+        requestPayerName: true,
+        requestPayerEmail: true
+      });
+      pr.canMakePayment().then(result => {
+        const avail = $('wallet-avail');
+        if(result){
+          prSupported = true; prCapabilities = result;
+          const els = stripe.elements();
+          prButton = els.create("paymentRequestButton", { paymentRequest: pr });
+          prButton.mount("#payment-request-button");
+          avail.innerHTML = "Wallets available: <b>" + (result.applePay?"Apple Pay ":"") + (result.googlePay?"Google Pay ":"") + "</b>";
+        }else{
+          prSupported = false;
+          $('payment-request-wrap').style.display = "none";
+          avail.textContent = "Wallets not available on this device/browser.";
+        }
+        gateWallet();
+      });
+
+      pr.on("paymentmethod", async (ev) => {
+        if(!legalOk()){ ev.complete("fail"); setMessage("fail","Agree to ToS and complete the security check."); return; }
+        try{
+          $('submitBtn').disabled = true; setMessage("", "");
+          const pricing = calcPricing();
+          if(pricing.blocked || pricing.total<=0){ ev.complete("fail"); setMessage("fail","Complete all fields."); $('submitBtn').disabled=false; return; }
+          const recaptchaToken = currentRecaptchaResponse();
+          const piRes = await fetch(CREATE_URL, {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ amount: Math.round(pricing.total*100), currency:"usd", recaptcha_token: recaptchaToken, metadata: buildMetadata() })
+          });
+          const piData = await piRes.json();
+          if(!piRes.ok || !piData?.client_secret){ ev.complete("fail"); setMessage("fail", piData?.error || "PI create failed."); $('submitBtn').disabled=false; return; }
+
+          const confirm = await stripe.confirmCardPayment(piData.client_secret, { payment_method: ev.paymentMethod.id }, { handleActions:false });
+          if(confirm.error){ ev.complete("fail"); setMessage("fail", confirm.error.message || "Wallet payment failed."); $('submitBtn').disabled=false; return; }
+          else{ ev.complete("success"); }
+
+          let intent = confirm.paymentIntent;
+          if(intent && intent.status==="requires_action"){
+            const next = await stripe.confirmCardPayment(piData.client_secret);
+            if(next.error){ setMessage("fail", next.error.message || "Payment failed."); $('submitBtn').disabled=false; return; }
+            intent = next.paymentIntent;
+          }
+          lastPaymentIntentId = intent && intent.id;
+          await sendOrderToBackend(lastPaymentIntentId, "wallet");
+          setMessage("success","Payment processed! Click “Submit Order (Email Us)” to send the order to Charmers.");
+          revealEmailButton();
+          $('submitBtn').disabled=false;
+        }catch(err){
+          console.error(err);
+          ev.complete && ev.complete("fail");
+          setMessage("fail","Payment failed.");
+          $('submitBtn').disabled=false;
+        }
+      });
+    }
+
+    // ===== Payment Element + Link =====
+    async function ensurePaymentElement(){
+      // Only build when legal satisfied & basic fields ready
+      if(!legalOk() || !validForWallet()){ return; }
+      const p = calcPricing();
+      if(p.total<=0 || p.blocked){ return; }
+
+      try{
+        // Create/refresh PaymentIntent for the exact amount
+        const recaptchaToken = currentRecaptchaResponse();
+        const res = await fetch(CREATE_URL, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ amount: Math.round(p.total*100), currency:"usd", recaptcha_token: recaptchaToken, metadata: buildMetadata() })
+        });
+        const data = await res.json();
+        if(!res.ok || !data?.client_secret){ $('card-warn').style.display='block'; return; }
+        if(data.client_secret === currentClientSecret && paymentElement){ return; } // up to date
+
+        currentClientSecret = data.client_secret;
+        const options = { clientSecret: currentClientSecret, appearance: { labels:"floating" } };
+        elements = stripe.elements(options);
+
+        // Link Authentication (collect email for Link; will reuse existing email field value)
+        linkElement && linkElement.unmount();
+        linkElement = elements.create("linkAuthentication", { defaultValues: { email: $('email').value || "" } });
+        linkElement.mount("#link-authentication-element");
+
+        // Payment Element (cards + Link + other supported methods)
+        paymentElement && paymentElement.unmount();
+        paymentElement = elements.create("payment", { layout: "tabs" });
+        paymentElement.mount("#payment-element");
+
+        $('card-warn').style.display='none';
+      }catch(e){
+        console.error(e);
+        $('card-warn').style.display='block';
+      }
+    }
+    function debouncedEnsurePaymentElement(){
+      clearTimeout(ensurePETimeout);
+      ensurePETimeout = setTimeout(ensurePaymentElement, 400);
+    }
+
+    async function handlePaymentElementConfirm(){
+      if(!legalOk()){ setMessage("fail","Agree to ToS and complete the security check."); return; }
+      const p = calcPricing();
+      if(p.total<=0 || p.blocked){ setMessage("fail","Complete all fields."); return; }
+      await ensurePaymentElement();
+      if(!elements || !paymentElement){ setMessage("fail","Payment UI not ready. Try again."); return; }
+
+      try{
+        $('submitBtn').disabled = true; setMessage("", "");
+        const {error, paymentIntent} = await stripe.confirmPayment({
+          elements,
+          redirect: "if_required",
+          confirmParams: {
+            payment_method_data: {
+              billing_details: { name: $('name').value, email: $('email').value }
+            }
+          }
+        });
+        if(error){
+          $('card-errors').textContent = error.message || "Payment failed.";
+          setMessage("fail","Payment failed.");
+          $('submitBtn').disabled = false; return;
+        }
+        if(paymentIntent && paymentIntent.status === "succeeded"){
+          lastPaymentIntentId = paymentIntent.id;
+          await sendOrderToBackend(lastPaymentIntentId, "payment_element");
+          setMessage("success","Payment processed! Click “Submit Order (Email Us)” to send the order to Charmers.");
+          revealEmailButton();
+        }else{
+          setMessage("fail","Payment not completed.");
+        }
+      }catch(err){
+        console.error(err);
+        setMessage("fail","Payment failed.");
+      }finally{
+        $('submitBtn').disabled = false;
+      }
+    }
+
+    // ===== Backend + Email =====
+    function buildMetadata(){
+      const f = getFields();
+      const p = calcPricing();
+      return {
+        name: f.name || "",
+        email: f.email || "",
+        phone: f.phone || "",
+        bracelet: f.bracelet || "",
+        size: f.style ? "" : (f.size || ""),
+        type: f.type || "",
+        color1: f.color1 || "",
+        color2: f.color2 || "",
+        beads: f.beads || "",
+        letters: f.lettersText || "",
+        style: f.style || "",
+        shipping: f.shipping || "",
+        processing: f.processing || "",
+        street: f.street || "",
+        street2: f.street2 || "",
+        city: f.city || "",
+        state: f.state || "",
+        postal: f.postal || "",
+        country: f.country || "",
+        price_bracelet: $('priceBracelet').textContent,
+        price_type: $('priceType').textContent,
+        price_shipping: $('priceShipping').textContent,
+        price_processing: $('priceProcessing').textContent,
+        total_display: $('priceTotal').textContent
+      };
+    }
+    async function sendOrderToBackend(payment_intent_id, methodUsed){
+      const order = buildMetadata();
+      order.payment_intent_id = payment_intent_id || "";
+      order.method = methodUsed || "card";
+      try{
+        await fetch(SAVE_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(order) });
+      }catch(e){ console.warn("Order save failed (non-blocking)", e); }
+    }
+    function revealEmailButton(){ show($('emailBtn'), true); show($('emailHint'), true); }
+    function buildEmailBody(){
+      const o = buildMetadata();
+      const lines = [
+        "New paid order for fulfillment:",
+        "",
+        `Payment Intent: ${lastPaymentIntentId || ""}`,
+        `Method: ${o.method || "card"}`,
+        "",
+        "Customer",
+        `Name: ${o.name}`, `Email: ${o.email}`, `Phone: ${o.phone}`,
+        "",
+        "Customization",
+        `Bracelet Text: ${o.bracelet}`,
+        `Size: ${o.size || "(style selected)"}`,
+        `Type: ${o.type}`,
+        `Color 1: ${o.color1}`,
+        `Color 2: ${o.color2 || "(none)"}`,
+        `Beads: ${o.beads}`,
+        o.beads === "letters" ? `Letters: ${o.letters}` : null,
+        `Preset Style: ${o.style || "(none)"}`,
+        "",
+        "Ship To",
+        o.street, o.street2, `${o.city}, ${o.state} ${o.postal}`, o.country,
+        "",
+        "Pricing",
+        `Bracelet/Style: ${o.price_bracelet}`,
+        `Type: ${o.price_type}`,
+        `Shipping: ${o.price_shipping}`,
+        `Processing: ${o.price_processing}`,
+        `TOTAL: ${o.total_display}`
+      ].filter(Boolean);
+      return lines.join("\\r\\n");
+    }
+    $('emailBtn')?.addEventListener("click", () => {
+      const subject = encodeURIComponent("New Charmers Order (PAID)");
+      const body = encodeURIComponent(buildEmailBody());
+      window.location.href = `mailto:${encodeURIComponent(MAILTO_TO)}?subject=${subject}&body=${body}`;
+    });
+
+    // ===== Events =====
+    $('submitBtn').addEventListener("click", handlePaymentElementConfirm);
+    Array.from($('checkoutForm').querySelectorAll("input, select, textarea")).forEach(el => {
+      el.addEventListener("input", () => { updateTotalsUI(); gateWallet(); });
+      el.addEventListener("change", () => { updateTotalsUI(); gateWallet(); });
+    });
+    $('beads').addEventListener("change", () => {
+      $('lettersWrap').style.display = ($('beads').value === "letters") ? "block" : "none";
+    });
+
+    // ===== Boot =====
+    window.addEventListener("DOMContentLoaded", () => {
+      updateTotalsUI();
+      if(window.Stripe){ initStripe(); }
+      // reCAPTCHA must run after script loads and on allowed domain
+      if(window.grecaptcha){ grecaptcha.enterprise.ready(() => {
+        try{ recaptchaWidgetId = grecaptcha.enterprise.render("recaptcha-container", { sitekey: RECAPTCHA_SITE_KEY }); $('recaptcha-warn').style.display='none'; }
+        catch(e){ $('recaptcha-warn').style.display='block'; }
+      }); }else{
+        window.addEventListener("load", () => { if(window.grecaptcha){ grecaptcha.enterprise.ready(() => {
+          try{ recaptchaWidgetId = grecaptcha.enterprise.render("recaptcha-container", { sitekey: RECAPTCHA_SITE_KEY }); $('recaptcha-warn').style.display='none'; }
+          catch(e){ $('recaptcha-warn').style.display='block'; }
+        }); } });
+      }
+    });
+  </script>
+</body>
+</html>
