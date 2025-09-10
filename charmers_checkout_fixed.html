@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Charmers Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(135deg, #8e2de2, #ff00cc);
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .checkout-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #1a1a1a;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-size: 0.95em;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: none;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 1em;
+    }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      margin-top: 15px;
+    }
+    .checkbox input {
+      margin-right: 8px;
+    }
+    .totals {
+      background: #111;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .totals p {
+      margin: 6px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 8px;
+      background: #ff00cc;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #e600b8;
+    }
+    #payment-request-button {
+      margin: 15px 0;
+    }
+    #card-element {
+      padding: 12px;
+      background: #2a2a2a;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+    .legal {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.8em;
+      color: #aaa;
+    }
+    .legal a {
+      color: #ff99ff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="checkout-container">
+    <h1>Charmers Checkout</h1>
+    <form id="payment-form">
+      <label>Name</label>
+      <input type="text" id="name" required />
+      <label>Email</label>
+      <input type="email" id="email" required />
+      <label>Phone (optional)</label>
+      <input type="tel" id="phone" />
+
+      <h2>Bracelet Customization</h2>
+      <label>Bracelet Text</label>
+      <input type="text" id="braceletText" required />
+
+      <label>Size</label>
+      <select id="size" required>
+        <option value="">Select size</option>
+        <option value="26">XXXS (3.5\") - $26</option>
+        <option value="12">XXS (4\") - $12</option>
+        <option value="7">XS (4.5\") - $7</option>
+        <option value="6">S (5\") - $6</option>
+        <option value="9">M (6.5\") - $9</option>
+        <option value="10">L (8.5\") - $10</option>
+        <option value="15">XL (10\") - $15</option>
+        <option value="19">XXL (12.5\") - $19</option>
+      </select>
+
+      <label>Type</label>
+      <select id="type">
+        <option value="0">Normal (Free)</option>
+        <option value="5">Double Layer (+$5)</option>
+        <option value="10">Premium (+$10)</option>
+      </select>
+
+      <label>Bracelet Color 1</label>
+      <select id="color1">
+        <option value="">Select color</option>
+        <option>Red</option>
+        <option>Blue</option>
+        <option>Green</option>
+        <option>Purple</option>
+        <option>Black</option>
+        <option>White</option>
+      </select>
+
+      <label>Bracelet Color 2 (optional)</label>
+      <select id="color2">
+        <option value="">(none)</option>
+        <option>Black</option>
+        <option>White</option>
+        <option>Purple</option>
+        <option>Gold</option>
+      </select>
+
+      <label>Beads</label>
+      <select id="beads">
+        <option value="0">(none)</option>
+        <option value="3">Glow Beads (+$3)</option>
+        <option value="5">Gemstone Beads (+$5)</option>
+      </select>
+
+      <label>Preset Styles (disables size)</label>
+      <select id="presetStyle">
+        <option value="">(none)</option>
+        <option value="15">Rainbow (+$15)</option>
+        <option value="20">Custom Logo Style (+$20)</option>
+      </select>
+
+      <h2>Shipping</h2>
+      <select id="shipping" required>
+        <optgroup label="USA">
+          <option value="9">Ground Advantage - $9</option>
+          <option value="13">Priority Mail - $13</option>
+          <option value="25">Priority Mail Express - $25</option>
+        </optgroup>
+        <optgroup label="International">
+          <option value="47">First Class International - $47</option>
+          <option value="78">Priority Mail International - $78</option>
+        </optgroup>
+      </select>
+
+      <h2>Address</h2>
+      <input type="text" id="street" placeholder="Street Address" required />
+      <input type="text" id="street2" placeholder="Apt, suite, etc. (optional)" />
+      <input type="text" id="city" placeholder="City" required />
+      <input type="text" id="state" placeholder="State" required />
+      <input type="text" id="zip" placeholder="Postal Code" required />
+      <input type="text" id="country" placeholder="Country" required />
+
+      <div id="payment-request-button"></div>
+
+      <h3>Or pay with card</h3>
+      <div id="card-element"></div>
+
+      <div class="checkbox">
+        <input type="checkbox" id="tos" required />
+        <label for="tos">I agree to the <a href="https://tos.charmersbiz.org" target="_blank">Terms of Service</a> and Usage Policies</label>
+      </div>
+
+      <div class="g-recaptcha" data-sitekey="6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO" style="margin:15px 0;"></div>
+
+      <div class="totals">
+        <p><span>Bracelet:</span> <span id="braceletCost">$0.00</span></p>
+        <p><span>Extras:</span> <span id="extrasCost">$0.00</span></p>
+        <p><span>Shipping:</span> <span id="shippingCost">$0.00</span></p>
+        <hr />
+        <p><strong>Total:</strong> <strong id="total">$0.00</strong></p>
+      </div>
+
+      <button type="submit">Complete Order</button>
+    </form>
+    <div class="legal">Powered by Stripe • For refunds, <a href="mailto:support@charmersbiz.org">contact support</a></div>
+  </div>
+
+  <script>
+    const stripe = Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+    const elements = stripe.elements();
+    const cardElement = elements.create("card");
+    cardElement.mount("#card-element");
+
+    const size = document.getElementById("size");
+    const type = document.getElementById("type");
+    const beads = document.getElementById("beads");
+    const presetStyle = document.getElementById("presetStyle");
+    const shipping = document.getElementById("shipping");
+    const total = document.getElementById("total");
+    const braceletCost = document.getElementById("braceletCost");
+    const extrasCost = document.getElementById("extrasCost");
+    const shippingCost = document.getElementById("shippingCost");
+
+    function updateTotals() {
+      let b = presetStyle.value ? parseFloat(presetStyle.value) : parseFloat(size.value || 0);
+      let t = parseFloat(type.value || 0);
+      let bd = parseFloat(beads.value || 0);
+      let s = parseFloat(shipping.value || 0);
+      let extras = t + bd;
+      braceletCost.textContent = `$${b.toFixed(2)}`;
+      extrasCost.textContent = `$${extras.toFixed(2)}`;
+      shippingCost.textContent = `$${s.toFixed(2)}`;
+      total.textContent = `$${(b + extras + s).toFixed(2)}`;
+    }
+
+    size.addEventListener("change", updateTotals);
+    type.addEventListener("change", updateTotals);
+    beads.addEventListener("change", updateTotals);
+    presetStyle.addEventListener("change", updateTotals);
+    shipping.addEventListener("change", updateTotals);
+
+    const paymentRequest = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: { label: 'Charmers Order', amount: 0 },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+    const prButton = elements.create('paymentRequestButton', { paymentRequest });
+    paymentRequest.canMakePayment().then(function(result) {
+      if (result) {
+        prButton.mount('#payment-request-button');
+      } else {
+        document.getElementById('payment-request-button').style.display = 'none';
+      }
+    });
+
+    document.getElementById("payment-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!document.getElementById("tos").checked) {
+        alert("You must agree to the Terms of Service before continuing.");
+        return;
+      }
+      if (grecaptcha.getResponse().length === 0) {
+        alert("Please complete the reCAPTCHA.");
+        return;
+      }
+      alert("Payment flow goes here. Stripe + backend intent call.");
+    });
+  </script>
+</body>
+</html>
