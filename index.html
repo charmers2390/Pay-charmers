@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<title>Charmers Checkout – Complete Final</title>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://www.google.com/recaptcha/enterprise.js?render=6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO"></script>
+<style>
+body{font-family:Poppins,sans-serif;background:linear-gradient(135deg,#6a00ff,#b300ff);color:#fff;padding:20px;margin:0}
+.container{max-width:720px;margin:auto;background:rgba(255,255,255,.12);padding:25px;border-radius:12px}
+input,select{width:100%;padding:10px;margin-top:6px;border:none;border-radius:6px}
+button{width:100%;padding:15px;margin-top:15px;border:none;border-radius:8px;background:#b300ff;color:#fff;font-weight:600}
+.total-box{margin-top:20px;background:rgba(0,0,0,.2);padding:15px;border-radius:10px}
+.total-box div{display:flex;justify-content:space-between;margin:5px 0}
+#payment-request-button{margin-top:20px}
+#payment-element{margin-top:20px;background:#fff;padding:10px;border-radius:8px}
+footer{margin-top:40px;text-align:center;font-size:12px;opacity:.8}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Charmers Checkout</h2>
+
+<form id="checkout-form">
+
+<label>Full Name</label><input id="name" required>
+<label>Email</label><input id="email" type="email" required>
+<label>Phone (optional)</label><input id="phone">
+
+<label>Country</label>
+<select id="country" required>
+<option value="">Select country</option>
+<option value="US">United States</option>
+<option value="CA">Canada</option>
+<option value="GB">United Kingdom</option>
+<option value="AU">Australia</option>
+<option value="JP">Japan</option>
+<option value="FR">France</option>
+<option value="DE">Germany</option>
+<option value="IN">India</option>
+<option value="BR">Brazil</option>
+<option value="ZA">South Africa</option>
+</select>
+
+<label id="regionLabel">Region</label>
+<input id="region" required>
+
+<label>City</label><input id="city" required>
+<label>Address Line 1</label><input id="address1" required>
+<label>Address Line 2 (optional)</label><input id="address2">
+<label>Postal Code</label><input id="postal" required>
+
+<label>Bracelet Size</label>
+<select id="size" required>
+<option value="6">XS – $6</option>
+<option value="9">Small – $9</option>
+<option value="11">Medium – $11</option>
+<option value="15">Large – $15</option>
+<option value="20">XL – $20</option>
+</select>
+
+<label>Bracelet Color</label><input id="braceletColor" required>
+
+<label>Coupon Codes</label>
+<input id="coupon" placeholder="e.g. CHARM10BLACKF, CHRISTMAS35">
+
+<label>Shipping Option</label>
+<select id="shipping" required>
+<option value="9">USPS Ground Advantage — $9</option>
+<option value="13">USPS Priority Mail — $13</option>
+<option value="25">USPS Priority Mail Express — $25</option>
+<option value="47">USPS First-Class Package International — $47</option>
+<option value="78">USPS Priority Mail International — $78</option>
+<option value="95">USPS Priority Mail Express International — $95</option>
+</select>
+
+<label>Processing</label>
+<select id="processing" required>
+<option value="0">CLU Ground — Free</option>
+<option value="0.75">CLU Priority — $0.75</option>
+<option value="1">CLU Express — $1</option>
+</select>
+
+<div class="total-box">
+<div><span>Bracelet:</span><span id="braceletCost">$0.00</span></div>
+<div><span>Shipping:</span><span id="shipCost">$0.00</span></div>
+<div><span>Processing:</span><span id="procCost">$0.00</span></div>
+<div><span>Coupons:</span><span id="discCost">$0.00</span></div>
+<div style="border-top:1px solid #fff;margin-top:6px;padding-top:6px;"><b>Total:</b><b id="total">$0.00</b></div>
+</div>
+
+<div id="payment-request-button"></div>
+<div id="payment-element"></div>
+
+<button id="payBtn" type="submit">Pay Now</button>
+<button id="completeOrder" type="button" style="display:none;background:#00c853;">Complete Order</button>
+
+</form>
+</div>
+
+<footer>
+Charmers Checkout © 2025 • All Rights Reserved • Powered by Charmers Logistics Union (CLU)
+</footer>
+
+<script>
+const stripe=Stripe("pk_live_51ReQgoHwN7YkNv6zwRaz8N1GO0PL7Bb3pqUbcxhss5cQQpJFKjoiNJR4DWKeTRWwhw2tmejOtXjbnrIg6sHnhxc600ePIEIgBc");
+
+const regionNames={
+ US:"State",
+ CA:"Province",
+ GB:"County",
+ AU:"State or Territory",
+ JP:"Prefecture",
+ FR:"Region",
+ DE:"Bundesland",
+ IN:"State or Union Territory",
+ BR:"State",
+ ZA:"Province"
+};
+
+country.addEventListener("change",()=>{
+ regionLabel.textContent=regionNames[country.value]||"Region";
+});
+
+function applyCoupons(sub){
+ let codes=coupon.value.toUpperCase().split(/[,\s]+/).filter(c=>c);
+ let disc=0;
+ let d=new Date();
+ codes.forEach(c=>{
+   if(c==="CHARM10BLACKF" && d.getMonth()==10 && d.getDate()==28) disc+=0.10;
+   if(c==="CHRISTMAS35" && d.getMonth()==11) disc+=0.35;
+ });
+ let final=sub*(1-disc);
+ return {discount:sub-final,final};
+}
+
+function updateTotals(){
+ let s=parseFloat(size.value||0);
+ let ship=parseFloat(shipping.value||0);
+ let p=parseFloat(processing.value||0);
+ let subtotal=s+ship+p+1.5;
+ let c=applyCoupons(subtotal);
+
+ braceletCost.textContent="$"+s.toFixed(2);
+ shipCost.textContent="$"+ship.toFixed(2);
+ procCost.textContent="$"+p.toFixed(2);
+ discCost.textContent="-$"+c.discount.toFixed(2);
+ total.textContent="$"+c.final.toFixed(2);
+ return c.final;
+}
+["size","shipping","processing","coupon"].forEach(id=>document.getElementById(id).addEventListener("input",updateTotals));
+updateTotals();
+
+let elements,paymentElement,clientSecret;
+
+async function initStripe(){
+ let amount=Math.round(updateTotals()*100);
+ let rec=await grecaptcha.enterprise.execute("6LeT6JArAAAAAKZDUSTu8Krw6i1sQshZnbgMoLvO",{action:"init"});
+ let res=await fetch("https://pay-charmersv2.onrender.com/create-payment-intent",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({amount,details:{init:true},recaptcha:rec})
+ });
+ let data=await res.json();
+ clientSecret=data.clientSecret;
+
+ elements=stripe.elements({clientSecret,appearance:{theme:"night"}});
+ const pr=stripe.paymentRequest({
+  country:"US",
+  currency:"usd",
+  total:{label:"Charmers Order",amount},
+  requestPayerName:true,
+  requestPayerEmail:true
+ });
+ const prBtn=elements.create("paymentRequestButton",{paymentRequest:pr});
+ pr.canMakePayment().then(r=>{ if(r)prBtn.mount("#payment-request-button"); });
+
+ paymentElement=elements.create("payment");
+ paymentElement.mount("#payment-element");
+}
+initStripe();
+
+checkout-form.addEventListener("submit",async e=>{
+ e.preventDefault();
+ let result=await stripe.confirmPayment({elements,redirect:"if_required"});
+ if(result.error){alert(result.error.message);}
+ else{
+   payBtn.style.display="none";
+   completeOrder.style.display="block";
+ }
+});
+
+completeOrder.addEventListener("click",()=>{
+ let body=encodeURIComponent(
+`Charmers Order
+
+Name: ${name.value}
+Email: ${email.value}
+Phone: ${phone.value}
+
+Shipping Address:
+${address1.value}
+${address2.value}
+${city.value}, ${region.value}
+${postal.value}, ${country.value}
+
+Bracelet Size: ${size.value}
+Bracelet Color: ${braceletColor.value}
+Shipping: ${shipping.selectedOptions[0].text}
+Processing: ${processing.selectedOptions[0].text}
+Coupons: ${coupon.value}
+Total: ${total.textContent}
+
+This order has been paid successfully.`
+ );
+ window.location.href=`mailto:Charmers2346@gmail.com?subject=Charmers Order&body=${body}`;
+});
+</script>
+
+</body>
+</html>
